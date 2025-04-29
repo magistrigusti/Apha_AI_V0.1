@@ -11,7 +11,15 @@ if (!process.env.BOT_TOKEN) {
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 bot.on(message('voice'), async ctx => {
-  await ctx.reply(JSON.stringify(ctx.message.voice, null, 2));
+  try {
+
+    const link = await ctx.telegram.getFileLink(ctx.message.voice.file_id); 
+    const userId = String(ctx.message.from.id);
+    console.log(link.href)
+    await ctx.reply(JSON.stringify(link, null, 2));
+  } catch (e) {
+    console.log(`Error while voice message`, e.message);
+  }
 });
 
 bot.command('start', async (ctx) =>{
