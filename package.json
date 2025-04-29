@@ -1,0 +1,23 @@
+{
+  "name": "apha_ai_v0.1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon ./src/main.js",
+    "start": "node ./src/main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.1.10"
+  },
+  "dependencies": {
+    "config": "^3.3.12",
+    "dotenv": "^16.5.0",
+    "telegraf": "^4.16.3"
+  }
+}
