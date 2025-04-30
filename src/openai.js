@@ -1,17 +1,30 @@
-import { Configuration, OpenAIApi} from 'openai';
-import config from 'config';
+// openai.js
+import OpenAI from 'openai';
+import { createReadStream } from 'fs';
 
 class OpenAi {
   constructor(apiKey) {
-    const configuration = new Configuration({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-    this.openai = new OpenAIApi(configuration);
+    this.openai = new OpenAI({ apiKey });
   }
 
-  chat() {}
+  async transcription(filepath) {
+    try {
+      const response = await this.openai.audio.transcriptions.create({
+        file: createReadStream(filepath),
+        model: 'whisper-1',
+      });
+      return response.text;
+    } catch (e) {
+      console.log('Error while transcription:', e.message);
+    }
+  }
 
-  transcription() { }
+  chat() {
+    // потом добавим
+  }
 }
 
-export const openai = new OpenAi();
+// 👇 Вот это обязательно внизу:
+export function getOpenaiInstance() {
+  return new OpenAi(process.env.OPENAI_API_KEY);
+}

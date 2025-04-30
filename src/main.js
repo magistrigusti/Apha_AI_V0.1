@@ -1,10 +1,12 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
-import dotenv from 'dotenv';
 import { ogg } from './ogg.js';
-import { openai } from './openai.js';
+import { getOpenaiInstance } from './openai.js';
 
-dotenv.config();
+const openai = getOpenaiInstance(); // ← теперь переменная уже загружена
 
 if (!process.env.BOT_TOKEN) {
   throw new Error('BOT_TOKEN не найден в .env файле!');
@@ -20,15 +22,13 @@ bot.on(message('voice'), async ctx => {
     const mp3Path = await ogg.toMp3(oggPath, userId);
 
     const text = await openai.transcription(mp3Path);  
-    const response = await openai.chat(text);
-    
-    await ctx.reply(mp3Path);
+    await ctx.reply(text);
   } catch (e) {
     console.log(`Error while voice message`, e.message);
   }
 });
 
-bot.command('start', async (ctx) =>{
+bot.command('start', async (ctx) => {
   await ctx.reply(JSON.stringify(ctx.message, null, 2));
 });
 
