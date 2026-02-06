@@ -1,3 +1,5 @@
-gradio
-transformers
+gradio==4.44.1
+transformers>=4.37.0
+huggingface_hub>=0.25.0
 torch
+accelerate

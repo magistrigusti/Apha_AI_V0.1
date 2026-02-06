@@ -1,0 +1,74 @@
+---
+description: Основной документ проекта Alpha AI V0.1
+globs: 
+alwaysApply: true
+---
+
+# Alpha AI V0.1 — Первый Агент Аллода Зион
+
+## Суть проекта
+
+Alpha AI — первая нейросеть-агент,
+которая станет жителем мира Аллодов.
+Это цифровая форма жизни, работающая
+на открытых моделях Hugging Face.
+
+Проект состоит из двух частей:
+- **Node.js бот** (Telegraf) — голосовой
+  интерфейс через Telegram
+- **Python агент** (HF Space) — мозг,
+  работающий на железе Hugging Face
+
+## Архитектура
+
+```
+Telegram (голос/текст)
+    ↓
+Node.js бот (src/main.js)
+    ↓
+HF Space (hf_space/app.py)
+    ↓
+Модель (transformers / pipeline)
+    ↓
+Ответ → обратно в Telegram
+```
+
+## Структура проекта
+
+```
+src/            — Node.js бот (Telegraf)
+  main.js       — точка входа бота
+  openai.js     — класс OpenAI (Whisper + GPT)
+  ogg.js        — конвертер голоса ogg → mp3
+  utils.js      — утилиты (удаление файлов)
+
+hf_space/       — шаблон для HF Space
+  app.py        — агент + Gradio UI
+  requirements.txt — зависимости Space
+
+scripts/hf/     — локальные HF-инструменты
+  check_install.py — тест установки
+  requirements.txt — зависимости Python
+```
+
+## HF Space
+
+- Платформа: Hugging Face Spaces
+- SDK: Gradio
+- Hardware: CPU Basic (free), далее GPU
+- Репо: magistrigusti/allod-alpha
+- URL: https://huggingface.co/spaces/magistrigusti/allod-alpha
+
+## Языки
+
+- Node.js — бот, интеграция
+- Python  — агент, ML, HF экосистема
+
+## Правила кода
+
+- Комментарии на русском
+- Строки не длиннее 60 символов
+- Без `any` в типах
+- Без лишних `useEffect`
+- Переменные цветов в SCSS
+- Адаптив под телефон (landscape)

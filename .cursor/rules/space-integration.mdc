@@ -1,0 +1,123 @@
+---
+description: Подключение HF Space к проектам
+globs: 
+alwaysApply: true
+---
+
+# Подключение Space к Allodium
+
+## Ответ: Да, модель доступна из любого проекта
+
+HF Space — это публичный сервер с API.
+Любой проект может отправить HTTP-запрос
+и получить ответ от модели.
+
+## Как это работает
+
+```
+Allodium (React / Next.js)
+    ↓ fetch / axios
+HF Space API (Gradio endpoint)
+    ↓
+Модель генерирует ответ
+    ↓
+JSON → обратно в Allodium
+```
+
+## URL API
+
+Gradio Space автоматически создаёт API:
+https://magistrigusti-allod-alpha.hf.space/api/predict
+
+Или через HF клиент:
+https://magistrigusti-allod-alpha.hf.space/
+
+## Пример из JavaScript (Allodium)
+
+```javascript
+// src/api/alpha.js
+const ALPHA_API =
+  'https://magistrigusti-allod-alpha.hf.space';
+
+export async function askAlpha(message, history = []) {
+  const response = await fetch(
+    `${ALPHA_API}/api/predict`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: [message, history],
+      }),
+    }
+  );
+
+  const result = await response.json();
+  return result.data[0];
+}
+```
+
+## Пример из React (компонент)
+
+```jsx
+import { useState } from 'react';
+import { askAlpha } from '@/api/alpha';
+
+export function AlphaAdvisor() {
+  const [message, setMessage] = useState('');
+  const [answer, setAnswer] = useState('');
+
+  const handleAsk = async () => {
+    const response = await askAlpha(message);
+    setAnswer(response);
+  };
+
+  return (
+    <div className="alpha-advisor">
+      <input
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+        placeholder="Спроси Альфу..."
+      />
+      <button onClick={handleAsk}>
+        Спросить
+      </button>
+      {answer && <p>{answer}</p>}
+    </div>
+  );
+}
+```
+
+## Пример из Telegram бота (Node.js)
+
+```javascript
+// src/alpha.js
+import axios from 'axios';
+
+const ALPHA_API =
+  'https://magistrigusti-allod-alpha.hf.space';
+
+export async function askAlpha(message) {
+  const { data } = await axios.post(
+    `${ALPHA_API}/api/predict`,
+    { data: [message, []] }
+  );
+  return data.data[0];
+}
+```
+
+## Где можно использовать
+
+- Allodium (React / Next.js) — советник
+- Telegram бот — голосовой помощник
+- Portal Network — NPC в портале
+- Dominum — игровой агент
+- Любой проект по HTTP
+
+## Важно
+
+- Space засыпает после 48ч без запросов
+- Первый запрос будит Space (15-30 сек)
+- Бесплатный тариф: без гарантий uptime
+- Pro тариф: Space не засыпает

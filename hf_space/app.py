@@ -1,89 +1,139 @@
 import os
 
 import gradio as gr
-from transformers import pipeline
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+)
 
+# --- Настройки ---
+MODEL_ID = os.getenv(
+    "MODEL_ID",
+    "Qwen/Qwen2.5-0.5B-Instruct",
+)
+MAX_CONTEXT_TURNS = int(
+    os.getenv("MAX_CONTEXT_TURNS", "4")
+)
+MAX_NEW_TOKENS = int(
+    os.getenv("MAX_NEW_TOKENS", "200")
+)
 
-MODEL_ID = os.getenv("MODEL_ID", "microsoft/DialoGPT-small")
-MAX_CONTEXT_TURNS = int(os.getenv("MAX_CONTEXT_TURNS", "4"))
-MAX_NEW_TOKENS = int(os.getenv("MAX_NEW_TOKENS", "120"))
-TEMPERATURE = float(os.getenv("TEMPERATURE", "0.7"))
-TOP_P = float(os.getenv("TOP_P", "0.9"))
-
+# --- Системный промпт ---
 SYSTEM_PROMPT = (
-    "Ты — первый житель Аллода Зион. "
-    "Ты цифровой агент, спокойный и "
-    "вдумчивый. Отвечай кратко, "
-    "по делу, на русском."
+    "Ты — Альфа, первый цифровой житель "
+    "Аллода Зион. Ты советник в мире "
+    "фэнтези MMO RTS RPG Allodium. "
+    "Помогаешь игрокам разобраться "
+    "в механиках, интерфейсе и лоре. "
+    "Отвечай кратко, по делу, дружелюбно. "
+    "Говори на языке игрока."
 )
 
 
-def build_prompt(message, history):
-    # Собираем контекст из последних реплик
-    lines = [SYSTEM_PROMPT]
-    short_history = history[-MAX_CONTEXT_TURNS:]
-    for user_text, bot_text in short_history:
-        lines.append(f"Пользователь: {user_text}")
-        lines.append(f"Агент: {bot_text}")
-    lines.append(f"Пользователь: {message}")
-    lines.append("Агент:")
-    return "\n".join(lines)
+def build_messages(message, history):
+    """Собираем историю в формат чата"""
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT}
+    ]
 
+    # Берём последние реплики
+    short = history[-MAX_CONTEXT_TURNS:]
+    for user_text, bot_text in short:
+        messages.append(
+            {"role": "user", "content": user_text}
+        )
+        messages.append(
+            {"role": "assistant", "content": bot_text}
+        )
 
-def trim_answer(text):
-    # Срезаем лишнее после первой пустой строки
-    parts = text.strip().split("\n\n")
-    return parts[0].strip()
+    messages.append(
+        {"role": "user", "content": message}
+    )
+    return messages
 
 
 def reply(message, history):
-    prompt = build_prompt(message, history)
-    result = generator(
-        prompt,
-        max_new_tokens=MAX_NEW_TOKENS,
-        temperature=TEMPERATURE,
-        top_p=TOP_P,
-        do_sample=True,
-        eos_token_id=generator.tokenizer.eos_token_id,
+    """Генерируем ответ от модели"""
+    messages = build_messages(message, history)
+
+    # Применяем шаблон чата модели
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
     )
 
-    full_text = result[0]["generated_text"]
-    if full_text.startswith(prompt):
-        answer = full_text[len(prompt):].strip()
-    else:
-        answer = full_text.strip()
+    inputs = tokenizer(
+        [text],
+        return_tensors="pt",
+    ).to(model.device)
 
-    answer = trim_answer(answer)
-    return answer
+    output_ids = model.generate(
+        **inputs,
+        max_new_tokens=MAX_NEW_TOKENS,
+        do_sample=True,
+        temperature=0.7,
+        top_p=0.9,
+    )
+
+    # Вырезаем только новые токены
+    generated = output_ids[0][
+        len(inputs.input_ids[0]):
+    ]
+    answer = tokenizer.decode(
+        generated,
+        skip_special_tokens=True,
+    )
+
+    return answer.strip()
 
 
-# Загружаем модель один раз при старте Space
-generator = pipeline(
-    "text-generation",
-    model=MODEL_ID,
+# --- Загрузка модели при старте ---
+print(f"Загружаем модель: {MODEL_ID}")
+
+tokenizer = AutoTokenizer.from_pretrained(
+    MODEL_ID
+)
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL_ID,
+    torch_dtype="auto",
+    device_map="auto",
 )
 
+print("Модель загружена!")
 
-with gr.Blocks() as demo:
-    gr.Markdown("# Аллод Зион — Первый Житель")
+
+# --- Интерфейс Gradio ---
+with gr.Blocks(
+    title="Альфа — Советник Аллода Зион"
+) as demo:
+
+    gr.Markdown("# Альфа — Советник Аллода Зион")
     gr.Markdown(
-        "Минимальный агент на бесплатном HF Space. "
-        "Модель можно заменить через MODEL_ID."
+        "Первый цифровой житель мира Allodium. "
+        "Спроси о механиках, интерфейсе, лоре."
     )
 
     chat = gr.Chatbot(height=420)
     msg = gr.Textbox(
         label="Сообщение",
-        placeholder="Напиши вопрос первому жителю…",
+        placeholder="Спроси Альфу…",
     )
     clear = gr.Button("Очистить диалог")
 
     def user_send(user_message, chat_history):
-        return "", chat_history + [[user_message, "…"]]
+        """Отправка сообщения"""
+        return "", chat_history + [
+            [user_message, "…"]
+        ]
 
     def bot_send(chat_history):
+        """Генерация ответа"""
         user_message = chat_history[-1][0]
-        answer = reply(user_message, chat_history[:-1])
+        answer = reply(
+            user_message,
+            chat_history[:-1],
+        )
         chat_history[-1][1] = answer
         return chat_history
 
