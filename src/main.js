@@ -1,44 +1,126 @@
+// src/main.js
+// ========================================
+// Telegram бот — Альфа, советник Зиона
+// ========================================
+
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { ogg } from './ogg.js';
-import { openai } from './openai.js';
-import { code } from 'telegraf/format';
+import { askAlpha } from './alpha.js';
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+// ========== ИНИЦИАЛИЗАЦИЯ ==========
+const bot = new Telegraf(
+  process.env.ALPHA_BOT_TOKEN
+);
 
-bot.on(message('voice'), async ctx => {
-  try {
-    await ctx.reply('🛰 Сообщение получено. Жду ответ от сервера…');
+const BOT_USERNAME = 'AlphaAllod_bot';
 
-    const link = await ctx.telegram.getFileLink(ctx.message.voice.file_id);
-    const userId = String(ctx.message.from.id);
 
-    const oggPath = await ogg.create(link.href, userId);
-    const mp3Path = await ogg.toMp3(oggPath, userId);
-
-    console.log('MP3 path:', mp3Path); // debug
-
-    const text = await openai.transcription(mp3Path);
-    console.log('Transcribed text:', text);
-
-    const response = await openai.chat(text);
-    console.log('GPT response:', response);
-
-    await ctx.reply(response);
-  } catch (e) {
-    console.error('Ошибка обработки голосового:', e.message);
-    await ctx.reply('❌ Ошибка при обработке. Попробуй ещё раз.');
-  }
-});
-
+// ========== /start ==========
 bot.command('start', async (ctx) => {
-  await ctx.reply(JSON.stringify(ctx.message, null, 2));
+  await ctx.reply(
+    'Приветствую, Лорд!\n'
+    + 'Я Альфа — советник Аллода Зион.\n\n'
+    + 'В группе:\n'
+    + '/ask <вопрос>\n'
+    + 'или @' + BOT_USERNAME
+    + ' <вопрос>\n\n'
+    + 'В личке — просто пиши.'
+  );
 });
 
-bot.launch();
 
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+// ========== /ask ==========
+bot.command('ask', async (ctx) => {
+  const question = ctx.message.text
+    .replace('/ask', '')
+    .replace('@' + BOT_USERNAME, '')
+    .trim();
+
+  if (!question) {
+    await ctx.reply(
+      'Напиши вопрос после /ask\n'
+      + 'Пример: /ask Что такое Аллод?'
+    );
+    return;
+  }
+
+  // Отправляем "Думаю…" и потом заменяем
+  const wait = await ctx.reply('Думаю…');
+
+  const answer = await askAlpha(question);
+
+  await ctx.telegram.editMessageText(
+    ctx.chat.id,
+    wait.message_id,
+    null,
+    answer,
+  );
+});
+
+
+// ========== ТЕКСТОВЫЕ СООБЩЕНИЯ ==========
+bot.on(message('text'), async (ctx) => {
+  const text = ctx.message.text;
+  const isPrivate =
+    ctx.chat.type === 'private';
+
+  // ===== В личке — отвечаем на всё =====
+  if (isPrivate) {
+    const wait = await ctx.reply('Думаю…');
+    const answer = await askAlpha(text);
+
+    await ctx.telegram.editMessageText(
+      ctx.chat.id,
+      wait.message_id,
+      null,
+      answer,
+    );
+    return;
+  }
+
+  // ===== В группе — проверяем =====
+  // Упоминание @AlphaAllod_bot
+  const mentioned = text.includes(
+    '@' + BOT_USERNAME
+  );
+
+  // Реплай на сообщение Альфы
+  const isReply =
+    ctx.message.reply_to_message
+      ?.from?.id === ctx.botInfo.id;
+
+  // Если ни то ни другое — молчим
+  if (!mentioned && !isReply) return;
+
+  // Убираем @username из текста
+  const question = text
+    .replace('@' + BOT_USERNAME, '')
+    .trim();
+
+  if (!question) return;
+
+  const wait = await ctx.reply('Думаю…');
+  const answer = await askAlpha(question);
+
+  await ctx.telegram.editMessageText(
+    ctx.chat.id,
+    wait.message_id,
+    null,
+    answer,
+  );
+});
+
+
+// ========== ЗАПУСК ==========
+bot.launch();
+console.log('[Alpha Bot] Started!');
+
+process.once(
+  'SIGINT', () => bot.stop('SIGINT')
+);
+process.once(
+  'SIGTERM', () => bot.stop('SIGTERM')
+);

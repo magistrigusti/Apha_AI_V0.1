@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@gradio/client": "^2.0.4",
     "axios": "^1.9.0",
     "config": "^3.3.12",
     "dotenv": "^16.5.0",

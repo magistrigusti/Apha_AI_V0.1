@@ -9,12 +9,12 @@ from model import reply
 
 # ========== ИНТЕРФЕЙС ==========
 with gr.Blocks(
-    title="Альфа — Советник Аллода Зион"
+    title="Альфа — Советник мира Allodium"
 ) as demo:
 
     # ========== ЗАГОЛОВОК ==========
     gr.Markdown(
-        "# Альфа — Советник Аллода Зион"
+        "# Альфа — Советник мира Allodium"
     )
     gr.Markdown(
         "Первый цифровой житель мира "
@@ -69,7 +69,7 @@ with gr.Blocks(
         chat_history[-1]["content"] = answer
         return chat_history
 
-    # ========== СОБЫТИЯ ==========
+    # ========== СОБЫТИЯ UI ==========
     msg.submit(
         user_send,
         inputs=[msg, chat],
@@ -86,6 +86,19 @@ with gr.Blocks(
         None,
         chat,
         queue=False,
+    )
+
+    # ========== API ДЛЯ TELEGRAM БОТА ==========
+    # Скрытые элементы — не видны в UI
+    api_input = gr.Textbox(visible=False)
+    api_output = gr.Textbox(visible=False)
+    api_btn = gr.Button(visible=False)
+
+    api_btn.click(
+        fn=lambda msg: reply(msg, []),
+        inputs=api_input,
+        outputs=api_output,
+        api_name="ask",
     )
 
 
