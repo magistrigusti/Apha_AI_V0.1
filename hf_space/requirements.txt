@@ -1,5 +1,5 @@
 gradio==4.44.1
-transformers>=4.37.0
-huggingface_hub>=0.25.0
+transformers==4.48.0
+huggingface_hub==0.27.1
 torch
 accelerate
