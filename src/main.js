@@ -5,12 +5,26 @@
 
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
+import express from 'express';
 import dotenv from 'dotenv';
 dotenv.config();
 
 import { askAlpha } from './alpha.js';
 
-// ========== ИНИЦИАЛИЗАЦИЯ ==========
+// ========== HTTP СЕРВЕР ДЛЯ RENDER ==========
+// Render требует чтобы сервис слушал порт
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('Альфа в сети! Зион на связи.');
+});
+
+app.listen(PORT, () => {
+  console.log(`[Server] Port ${PORT}`);
+});
+
+// ========== ИНИЦИАЛИЗАЦИЯ БОТА ==========
 const bot = new Telegraf(
   process.env.ALPHA_BOT_TOKEN
 );

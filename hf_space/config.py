@@ -1,16 +1,11 @@
-# ========================================
-# config.py — Настройки агента Альфа
-# ========================================
-
 import os
 
-# ========== МОДЕЛЬ ==========
+
 MODEL_ID = os.getenv(
     "MODEL_ID",
     "Qwen/Qwen2.5-0.5B-Instruct",
 )
 
-# ========== ПАРАМЕТРЫ ГЕНЕРАЦИИ ==========
 MAX_CONTEXT_TURNS = int(
     os.getenv("MAX_CONTEXT_TURNS", "4")
 )
@@ -25,4 +20,8 @@ TEMPERATURE = float(
 
 TOP_P = float(
     os.getenv("TOP_P", "0.9")
+)
+
+MAX_RETRIEVED_CHUNKS = int(
+    os.getenv("MAX_RETRIEVED_CHUNKS", "4")
 )

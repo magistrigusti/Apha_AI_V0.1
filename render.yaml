@@ -1,0 +1,22 @@
+# ========================================
+# Render — Альфа бот (глобально)
+# ========================================
+# New → Blueprint → подключи репо.
+# Render задеплоит бота автоматически.
+# ========================================
+
+services:
+  - type: web
+    name: alpha-bot
+    runtime: node
+
+    buildCommand: npm install
+    startCommand: npm start
+
+    envVars:
+      - key: ALPHA_BOT_TOKEN
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: NODE_VERSION
+        value: "22"
