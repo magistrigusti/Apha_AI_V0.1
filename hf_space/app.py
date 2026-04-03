@@ -25,7 +25,7 @@ with gr.Blocks(
     # type="messages" — формат OpenAI-style
     chat = gr.Chatbot(
         height=420,
-        type="messages",
+        
     )
 
     # ========== ПОЛЕ ВВОДА ==========
