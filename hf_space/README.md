@@ -1,24 +1,35 @@
-# Аллод Зион — HF Space (CPU Basic)
 
-Этот шаблон рассчитан на бесплатное
-пространство Hugging Face.
+title: Alpha - Advisor of Allodium
+emoji: 🤖
+colorFrom: indigo
+colorTo: blue
+sdk: gradio
+sdk_version: 6.10.0
+app_file: app.py
+pinned: false
+---
 
-## Что делать в Space
+# Alpha - Hugging Face Space
 
-1) Создать Space (SDK: Gradio)
-2) Заменить `app.py`
-3) Заменить `requirements.txt`
-4) Дождаться сборки
+This Space runs Alpha, the in-world advisor for Allodium.
 
-## Переменные окружения
+## Runtime notes
 
-- MODEL_ID = microsoft/DialoGPT-small
-- MAX_CONTEXT_TURNS = 4
-- MAX_NEW_TOKENS = 120
-- TEMPERATURE = 0.7
-- TOP_P = 0.9
+- The Space uses the Gradio SDK managed by Hugging Face.
+- Do not pin a conflicting Gradio version in `requirements.txt`.
+- Extra Python dependencies should be listed in `requirements.txt`.
 
-## Комментарий
+## Environment variables
 
-Модель можно сменить на любую
-текстовую (маленькую) с HF.
+- `MODEL_ID`
+- `MAX_CONTEXT_TURNS`
+- `MAX_NEW_TOKENS`
+- `TEMPERATURE`
+- `TOP_P`
+- `MAX_RETRIEVED_CHUNKS`
+
+## Knowledge sources
+
+- `knowledge.py` contains the compact built-in world summary.
+- `knowledge_base/` contains curated local facts and role docs.
+- `../datasets/` can provide larger reference texts such as the whitepaper when present in the repo.

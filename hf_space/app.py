@@ -21,7 +21,6 @@ with gr.Blocks(
         "Allodium. Спроси о механиках, "
         "интерфейсе, лоре."
     )
-
     # ========== ЧАТ ==========
     # type="messages" — формат OpenAI-style
     chat = gr.Chatbot(

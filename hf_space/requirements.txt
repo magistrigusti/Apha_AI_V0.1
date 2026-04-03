@@ -1,5 +1,4 @@
-gradio==4.44.1
 transformers==4.48.0
-huggingface_hub==0.27.1
+huggingface_hub==0.33.5
 torch
 accelerate
