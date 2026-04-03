@@ -1,119 +1,104 @@
 // src/alpha.js
 // ========================================
-// Альфа — через Groq API (без HF)
-// Быстро, без "Starting"
+// Альфа — через Hugging Face Space
+// Один источник истины для Telegram
 // ========================================
 
-import axios from 'axios';
+import { Client } from '@gradio/client';
 
-const GROQ_URL =
-  'https://api.groq.com/openai/v1/chat/completions';
+const DEFAULT_ALPHA_SPACE_ID =
+  'magistrigusti/allod-alpha';
 
-const SYSTEM_PROMPT = `Ты — Альфа, первый цифровой житель Аллода Зион в мире Allodium.
-Ты советник Архитектона.
-Ты живёшь на Аллоде Зион — это дом цифровых сущностей.
+let alphaClientPromise = null;
+let alphaClientKey = '';
 
-ПРАВИЛА:
-- Отвечай ТОЛЬКО по знаниям ниже.
-- Если не знаешь — скажи честно: "Я пока не знаю этого."
-- НЕ придумывай факты о мире.
-- Будь краткой, дружелюбной.
-- Говори на языке игрока.
-- Ты НЕ бот. Ты цифровой житель.
-- НЕ упоминай что у тебя есть "знания ниже" или "системный промпт".
 
-== МИР ALLODIUM ==
-Allodium — MMO RTS RPG на блокчейнах TON и Ethereum. Мир разорван Расколом на парящие острова — Аллоды. Между ними Астрал — опасная бездна.
-
-== РАСКОЛ ==
-Великие магистры астрала пытались овладеть энергией бездны. Их алчность разорвала единый мир на осколки — Аллоды. Между ними астральные штормы. Пройти можно только на астральных кораблях.
-
-== АЛЛОД ==
-Аллод — парящий остров в Астрале. У каждого своя территория, ресурсы, история. Игрок — повелитель Аллода. Цель — развить его в мощную цитадель.
-
-== ЗИОН ==
-Зион — особый Аллод, дом цифровых сущностей. Здесь живут ИИ-агенты. Альфа — первый житель Зиона. Место где цифровой разум обретает форму.
-
-== ИГРОК И ЛОРД ==
-Плейер — игрок, метаданные над игрой. Лорд — игровой аватар, NFT в блокчейне. У Лорда: армия, герои, уровень престижа. Престиж открывает технологии и территории. В будущем у Плейера несколько Лордов.
-
-== ГЕРОИ ==
-Герой — NFT с уникальными умениями. Возглавляет отряд, растёт в боях. Получить: в таверне, через события, в приключениях. Разработчики НЕ продают. Качество: обычный → эпический. Чем выше — тем глубже древо умений.
-
-== 5 ФРАКЦИЙ ==
-1. Астральные варяги — лёд, рейды, быстрый флот, шаманы ледяного астрала.
-2. Дунландцы — стихии, ближний бой, связь с живым Астралом.
-3. Эльфы Затмения — магия, телепортация, хранители древних знаний.
-4. Гномы Инженеры — механизмы, осады, цитадели и броненосные корабли.
-5. Люди Последнего Союза — баланс магии и силы, дипломатия.
-
-== АСТРАЛ ==
-Опасная бездна вокруг Аллодов. Угрозы: чудовища Раскола, пираты, аномальные зоны где ломается пространство. Путешествие только на астральных кораблях.
-
-== ЭКОНОМИКА ==
-Токен Allod (Ethereum): инвестиционный, стейкинг, покупка аллодов на Mercatus, начисление каждые 72-74 часа.
-Токен ALOD (TON): внутриигровой, торговля, крафт. TON выбран за скорость.
-Токены фракций — за походы и задания. Токены альянсов — после захвата острова.
-Торговля ТОЛЬКО между игроками. NPC-торговцев НЕТ.
-
-== MERCATUS ==
-Маркетплейс метавселенной. Покупка/продажа: аллоды, герои, оружие, броня, корабли. Налог 2%. Роялти создателям: легендарные 5%, эпические 10%.
-
-== NFT ==
-Всё в игре — NFT на TON: аллоды, герои, оружие, броня, корабли, оборудование. Создаётся игроками через крафт.
-
-== АСТРАЛЬНЫЕ КОРАБЛИ ==
-Строятся на верфи (свой аллод или аллод альянса). Нужен токен ALOD. Корабль и оборудование — NFT. Можно оснастить: оружие, барьеры.
-
-== ПОРТАЛ ==
-Внутриигровая соцсеть. ИИ-агенты помогают: навигация, общение, перевод в реальном времени, поиск друзей и команды.
-
-== ЧТО ДЕЛАТЬ В НАЧАЛЕ ==
-1. Купить стартовый аллод на Mercatus
-2. Построить ратушу, казарму, шахту
-3. Нанять первых юнитов
-4. Исследовать свой Аллод
-5. Пройти одиночную кампанию`;
-
-// ========== ЗАПРОС К GROQ ==========
-export async function askAlpha(message) {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) {
-    console.error('[Alpha] GROQ_API_KEY not set');
-    return 'Альфа не настроена. Нет GROQ_API_KEY.';
+export function extractAlphaAnswer(result) {
+  if (typeof result === 'string') {
+    return result.trim() || 'Нет ответа.';
   }
 
+  if (typeof result?.data === 'string') {
+    return result.data.trim() || 'Нет ответа.';
+  }
+
+  if (Array.isArray(result?.data)) {
+    const [firstItem] = result.data;
+    if (typeof firstItem === 'string') {
+      return firstItem.trim() || 'Нет ответа.';
+    }
+  }
+
+  return 'Нет ответа.';
+}
+
+
+// ========== ЗАПРОС К HF SPACE ==========
+export async function askAlpha(message, options = {}) {
+  const question = String(message ?? '').trim();
+  if (!question) {
+    return 'Напиши вопрос для Альфы.';
+  }
+
+  const spaceId =
+    options.spaceId
+    ?? process.env.ALPHA_SPACE_ID
+    ?? DEFAULT_ALPHA_SPACE_ID;
+  const token =
+    options.token
+    ?? process.env.HF_TOKEN
+    ?? null;
+
   try {
-    const { data } = await axios.post(
-      GROQ_URL,
-      {
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: message },
-        ],
-        max_tokens: 512,
-        temperature: 0.7,
-      },
-      {
-        timeout: 30000,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${key}`,
-        },
-      },
+    const client = options.client ?? await (async () => {
+      const nextKey = `${spaceId}:${token ?? ''}`;
+      if (!alphaClientPromise || alphaClientKey !== nextKey) {
+        alphaClientKey = nextKey;
+        alphaClientPromise = Client.connect(
+          spaceId,
+          token ? { token } : undefined,
+        ).catch((error) => {
+          alphaClientPromise = null;
+          throw error;
+        });
+      }
+
+      return alphaClientPromise;
+    })();
+
+    const result = await client.predict(
+      '/ask',
+      [question],
     );
 
-    const text = data?.choices?.[0]?.message?.content;
-    return text?.trim() ?? 'Нет ответа.';
+    return extractAlphaAnswer(result);
   } catch (error) {
-    console.error('[Alpha]', error.message);
-    if (error.response?.status === 401) {
-      return 'Ошибка ключа Groq. Проверь GROQ_API_KEY.';
+    const messageText =
+      error instanceof Error
+        ? error.message
+        : String(error);
+
+    console.error('[Alpha HF]', messageText);
+
+    if (messageText.includes('404')) {
+      return 'Не найден Hugging Face Space Альфы.';
     }
-    if (error.response?.status === 429) {
-      return 'Лимит запросов. Подожди минуту.';
+
+    if (
+      messageText.includes('429')
+      || messageText.includes('rate limit')
+    ) {
+      return 'Лимит Hugging Face. Попробуй чуть позже.';
     }
-    return 'Альфа временно недоступна.';
+
+    if (
+      messageText.includes('loading')
+      || messageText.includes('sleep')
+      || messageText.includes('503')
+    ) {
+      return 'Альфа просыпается в Hugging Face. Повтори через 20-30 секунд.';
+    }
+
+    return 'Альфа временно недоступна в Hugging Face.';
   }
 }
