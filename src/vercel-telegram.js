@@ -1,0 +1,154 @@
+import { getAlphaBot } from './alpha-bot.js';
+
+
+function readHeader(req, name) {
+  return req.headers?.[name]
+    ?? req.headers?.[
+      name.toLowerCase()
+    ]
+    ?? null;
+}
+
+
+function resolveOrigin(req) {
+  const protocol =
+    readHeader(
+      req,
+      'x-forwarded-proto',
+    )
+    ?? 'https';
+  const host =
+    readHeader(
+      req,
+      'x-forwarded-host',
+    )
+    ?? readHeader(req, 'host');
+
+  if (!host) {
+    throw new Error(
+      'Cannot resolve request host',
+    );
+  }
+
+  return `${protocol}://${host}`;
+}
+
+
+export async function handleTelegramWebhook(
+  req,
+  res,
+  options = {},
+) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({
+      ok: false,
+      error: 'Method Not Allowed',
+    });
+  }
+
+  const secretToken =
+    options.secretToken
+    ?? process.env.TELEGRAM_WEBHOOK_SECRET
+    ?? '';
+  const incomingSecret = readHeader(
+    req,
+    'x-telegram-bot-api-secret-token',
+  );
+
+  if (
+    secretToken
+    && incomingSecret !== secretToken
+  ) {
+    return res.status(401).json({
+      ok: false,
+      error: 'Unauthorized',
+    });
+  }
+
+  const bot =
+    options.bot ?? getAlphaBot();
+  await bot.handleUpdate(
+    req.body,
+    res,
+  );
+
+  if (!res.writableEnded && !res.ended) {
+    return res.status(200).json({
+      ok: true,
+    });
+  }
+}
+
+
+export async function registerTelegramWebhook(
+  req,
+  res,
+  options = {},
+) {
+  if (
+    req.method !== 'GET'
+    && req.method !== 'POST'
+  ) {
+    res.setHeader('Allow', 'GET, POST');
+    return res.status(405).json({
+      ok: false,
+      error: 'Method Not Allowed',
+    });
+  }
+
+  const setupToken =
+    options.setupToken
+    ?? process.env.TELEGRAM_WEBHOOK_SETUP_TOKEN
+    ?? '';
+  const incomingSetupToken =
+    readHeader(
+      req,
+      'x-webhook-setup-token',
+    )
+    ?? req.query?.token
+    ?? '';
+
+  if (
+    setupToken
+    && incomingSetupToken !== setupToken
+  ) {
+    return res.status(401).json({
+      ok: false,
+      error: 'Unauthorized',
+    });
+  }
+
+  const secretToken =
+    options.secretToken
+    ?? process.env.TELEGRAM_WEBHOOK_SECRET
+    ?? '';
+  const webhookPath =
+    options.webhookPath
+    ?? '/api/telegram';
+  const origin =
+    options.origin
+    ?? resolveOrigin(req);
+  const webhookUrl = new URL(
+    webhookPath,
+    origin,
+  ).toString();
+
+  const bot =
+    options.bot ?? getAlphaBot();
+  const result =
+    await bot.telegram.setWebhook(
+      webhookUrl,
+      secretToken
+        ? {
+            secret_token: secretToken,
+          }
+        : undefined,
+    );
+
+  return res.status(200).json({
+    ok: true,
+    webhookUrl,
+    result,
+  });
+}
