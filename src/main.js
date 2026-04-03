@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { askAlpha } from './alpha.js';
+import { replaceWaitingMessage } from './telegram-reply.js';
 
 // ========== HTTP СЕРВЕР ДЛЯ RENDER ==========
 // Render требует чтобы сервис слушал порт
@@ -66,10 +67,9 @@ bot.command('ask', async (ctx) => {
 
   const answer = await askAlpha(question);
 
-  await ctx.telegram.editMessageText(
-    ctx.chat.id,
+  await replaceWaitingMessage(
+    ctx,
     wait.message_id,
-    null,
     answer,
   );
 });
@@ -86,10 +86,9 @@ bot.on(message('text'), async (ctx) => {
     const wait = await ctx.reply('Думаю…');
     const answer = await askAlpha(text);
 
-    await ctx.telegram.editMessageText(
-      ctx.chat.id,
+    await replaceWaitingMessage(
+      ctx,
       wait.message_id,
-      null,
       answer,
     );
     return;
@@ -119,10 +118,9 @@ bot.on(message('text'), async (ctx) => {
   const wait = await ctx.reply('Думаю…');
   const answer = await askAlpha(question);
 
-  await ctx.telegram.editMessageText(
-    ctx.chat.id,
+  await replaceWaitingMessage(
+    ctx,
     wait.message_id,
-    null,
     answer,
   );
 });
