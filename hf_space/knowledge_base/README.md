@@ -2,6 +2,8 @@
 
 Drop confirmed Allodium materials here as `.md` or `.txt` files.
 
+Full whitepaper for retrieval: `allodium_whitepaper_v02.txt` (update when the source doc changes).
+
 What belongs here:
 - whitepaper excerpts
 - production facts

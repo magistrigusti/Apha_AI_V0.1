@@ -7,106 +7,19 @@ import re
 from typing import Iterable
 
 from config import MAX_RETRIEVED_CHUNKS
+from retrieval_jsonl import qa_chunks_from_jsonl
+from retrieval_lexicon import ROLE_HINT_TOKENS, STOPWORDS
 
 
 BASE_DIR = Path(__file__).resolve().parent
 KNOWLEDGE_DIR = BASE_DIR / "knowledge_base"
+# Монорепо: ../datasets. Только Space (корень = hf_space): hf_space/datasets/*.jsonl
 DATASETS_DIR = BASE_DIR.parent / "datasets"
-SUPPORTED_SUFFIXES = {".md", ".txt"}
+SPACE_DATASETS_DIR = BASE_DIR / "datasets"
+# kb: .md/.txt/.jsonl; корень репо или hf_space/datasets: только *.jsonl (без дубля wp).
+KB_SUFFIXES = {".md", ".txt", ".jsonl"}
 CHUNK_SIZE = 1100
 CHUNK_OVERLAP = 180
-ROLE_HINT_TOKENS = {
-    "альфа",
-    "альфы",
-    "бета",
-    "беты",
-    "зион",
-    "советник",
-    "трейдер",
-    "казначей",
-    "агент",
-    "агенты",
-    "роль",
-    "роли",
-}
-
-STOPWORDS = {
-    "a",
-    "an",
-    "and",
-    "are",
-    "as",
-    "at",
-    "be",
-    "but",
-    "by",
-    "for",
-    "from",
-    "if",
-    "in",
-    "into",
-    "is",
-    "it",
-    "of",
-    "on",
-    "or",
-    "that",
-    "the",
-    "this",
-    "to",
-    "with",
-    "и",
-    "в",
-    "во",
-    "на",
-    "не",
-    "но",
-    "что",
-    "как",
-    "это",
-    "из",
-    "к",
-    "по",
-    "за",
-    "для",
-    "от",
-    "до",
-    "у",
-    "о",
-    "об",
-    "под",
-    "над",
-    "или",
-    "ли",
-    "мы",
-    "вы",
-    "ты",
-    "он",
-    "она",
-    "они",
-    "их",
-    "его",
-    "ее",
-    "её",
-    "же",
-    "бы",
-    "то",
-    "так",
-    "там",
-    "тут",
-    "еще",
-    "ещё",
-    "уже",
-    "про",
-    "при",
-    "без",
-}
-
-
-def _candidate_dirs() -> Iterable[Path]:
-    for directory in (KNOWLEDGE_DIR, DATASETS_DIR):
-        if directory.exists():
-            yield directory
 
 
 def _read_text(path: Path) -> str:
@@ -166,45 +79,71 @@ def _chunk_text(text: str) -> list[str]:
     return chunks
 
 
-def _iter_knowledge_files() -> Iterable[Path]:
-    for directory in _candidate_dirs():
-        for path in sorted(directory.rglob("*")):
-            if not path.is_file():
+def _iter_jsonl_files() -> Iterable[Path]:
+    seen: set[Path] = set()
+    for base in (DATASETS_DIR, SPACE_DATASETS_DIR):
+        if not base.exists():
+            continue
+        for path in sorted(base.glob("*.jsonl")):
+            key = path.resolve()
+            if key in seen:
                 continue
-            if path.suffix.lower() not in SUPPORTED_SUFFIXES:
-                continue
+            seen.add(key)
             yield path
+
+
+def _iter_knowledge_paths() -> Iterable[Path]:
+    if KNOWLEDGE_DIR.exists():
+        for path in sorted(KNOWLEDGE_DIR.rglob("*")):
+            if path.is_file() and path.suffix.lower() in KB_SUFFIXES:
+                yield path
+    yield from _iter_jsonl_files()
+
+
+def _append_chunk_records(
+    chunks: list[dict[str, object]],
+    path: Path,
+    pieces: list[str],
+    source_kind: str,
+) -> None:
+    title = path.stem.replace("_", " ").replace("-", " ").strip()
+    relative = path.relative_to(BASE_DIR.parent).as_posix()
+    for index, chunk in enumerate(pieces):
+        tokens = _tokenize(chunk)
+        if not tokens:
+            continue
+        chunks.append(
+            {
+                "source": relative,
+                "source_kind": source_kind,
+                "title": title or path.name,
+                "chunk_index": index + 1,
+                "text": chunk,
+                "token_counts": Counter(tokens),
+                "unique_tokens": set(tokens),
+            }
+        )
 
 
 @lru_cache(maxsize=1)
 def load_external_chunks() -> list[dict[str, object]]:
     chunks: list[dict[str, object]] = []
 
-    for path in _iter_knowledge_files():
+    for path in _iter_knowledge_paths():
+        source_kind = (
+            "knowledge_base" if KNOWLEDGE_DIR in path.parents else "datasets"
+        )
+        if path.suffix.lower() == ".jsonl":
+            qa_chunks = qa_chunks_from_jsonl(path, _read_text)
+            _append_chunk_records(chunks, path, qa_chunks, source_kind)
+            continue
+
         text = _read_text(path).strip()
         if not text:
             continue
-
-        title = path.stem.replace("_", " ").replace("-", " ").strip()
-        relative = path.relative_to(BASE_DIR.parent).as_posix()
-        source_kind = "knowledge_base" if KNOWLEDGE_DIR in path.parents else "datasets"
-
-        for index, chunk in enumerate(_chunk_text(text)):
-            tokens = _tokenize(chunk)
-            if not tokens:
-                continue
-
-            chunks.append(
-                {
-                    "source": relative,
-                    "source_kind": source_kind,
-                    "title": title or path.name,
-                    "chunk_index": index + 1,
-                    "text": chunk,
-                    "token_counts": Counter(tokens),
-                    "unique_tokens": set(tokens),
-                }
-            )
+        _append_chunk_records(
+            chunks, path, _chunk_text(text), source_kind
+        )
 
     return chunks
 

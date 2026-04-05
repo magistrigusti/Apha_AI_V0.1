@@ -1,1 +1,6 @@
+# Зависимости для fine_tune.py (Colab / локально с GPU)
+torch
+transformers>=4.48.0
+accelerate>=0.34.0
+datasets>=3.0.0
 huggingface_hub

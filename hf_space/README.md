@@ -31,5 +31,5 @@ This Space runs Alpha, the in-world advisor for Allodium.
 ## Knowledge sources
 
 - `knowledge.py` contains the compact built-in world summary.
-- `knowledge_base/` contains curated local facts and role docs.
-- `../datasets/` can provide larger reference texts such as the whitepaper when present in the repo.
+- `knowledge_base/` holds whitepaper-sized `.txt` / `.md` and role docs (deployed with Space).
+- `../datasets/*.jsonl` is indexed for Q&A-style retrieval (e.g. `allod_advisor.jsonl`).
