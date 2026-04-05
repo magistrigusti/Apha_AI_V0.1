@@ -14,22 +14,22 @@ Alpha AI — первая нейросеть-агент,
 на открытых моделях Hugging Face.
 
 Проект состоит из двух частей:
-- **Node.js бот** (Telegraf) — голосовой
-  интерфейс через Telegram
+- **Node.js бот** (Telegraf) — текстовый
+  интерфейс через Telegram → HF Space
 - **Python агент** (HF Space) — мозг,
   работающий на железе Hugging Face
 
 ## Архитектура
 
 ```
-Telegram (голос/текст)
-    ↓
-Node.js бот (src/main.js)
-    ↓
+Telegram (текст)
+  ↓
+Node.js бот (src/main.js → alpha.js)
+  ↓
 HF Space (hf_space/app.py)
-    ↓
-Модель (transformers / pipeline)
-    ↓
+  ↓
+Модель (transformers)
+  ↓
 Ответ → обратно в Telegram
 ```
 
@@ -38,8 +38,8 @@ HF Space (hf_space/app.py)
 ```
 src/            — Node.js бот (Telegraf)
   main.js       — точка входа бота
-  openai.js     — класс OpenAI (Whisper + GPT)
-  ogg.js        — конвертер голоса ogg → mp3
+  alpha.js      — запрос к HF Space (Gradio Client)
+  alpha-bot.js  — хендлеры Telegram
   utils.js      — утилиты (удаление файлов)
 
 hf_space/       — шаблон для HF Space

@@ -1,0 +1,24 @@
+# Чеклист: что залить на Hugging Face Space (без обучения на ноуте)
+
+Обучение (fine-tune) НЕ обязательно. Достаточно задеплоить код Space с файлами знаний:
+модель Qwen тянется с Hub, лор и whitepaper подмешиваются через промпт + поиск (RAG).
+
+1) Репозиторий Space (например magistrigusti/allod-alpha) должен содержать ВЕСЬ каталог hf_space:
+   - app.py, chat.py, model.py, config.py, prompts.py, knowledge.py
+   - retrieval.py, retrieval_jsonl.py, retrieval_lexicon.py
+   - requirements.txt, README.md (frontmatter для HF)
+   - knowledge_base/  (в т.ч. allodium_whitepaper_v02.txt, alpha_role.md, production_facts.md)
+   - datasets/allod_advisor.jsonl  (копия Q&A для RAG внутри Space)
+
+2) Закоммить и push в ветку, с которой связан Space (или «Duplicate space» и укажи свой GitHub).
+
+3) В настройках Space (Settings → Variables):
+   - MODEL_ID по умолчанию уже Qwen2.5-0.5B-Instruct в config.py; менять не обязательно.
+   - При необходимости: MAX_RETRIEVED_CHUNKS=4 … (см. hf_space/README.md)
+
+4) Дождись сборки (Build). Первый запрос после сна Space — 20–40 с.
+
+5) Проверка: открой вкладку App, задай вопрос про Аллод / Allodium / фракции.
+
+Дублирование с монорепо: корневой datasets/ остаётся для fine_tune.py;
+hf_space/datasets/allod_advisor.jsonl — чтобы Space работал даже если в деплое нет папки ../datasets.
