@@ -9,7 +9,7 @@
 
 1. Зайди на [dashboard.render.com](https://dashboard.render.com)
 2. **New → Blueprint**
-3. Подключи репо `magistrigusti/Apha_AI_V0.1`
+3. Подключи репо `magistrigusti/Apha_Friend-gamers-allodium`
 4. Render подхватит `render.yaml` — нажми **Apply**
 5. В настройках сервиса **alpha-bot** добавь переменные:
    - `ALPHA_BOT_TOKEN` = токен от @BotFather
