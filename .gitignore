@@ -4,3 +4,7 @@ dist/
 .venv/
 venv/
 .cursor/
+
+# Кэш байткода Python (создаётся сам, на HF не нужен)
+__pycache__/
+*.py[cod]

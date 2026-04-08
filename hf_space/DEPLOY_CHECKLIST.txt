@@ -4,9 +4,17 @@
 модель Qwen тянется с Hub, лор и whitepaper подмешиваются через промпт + поиск (RAG).
 
 1) Репозиторий Space (например magistrigusti/allod-alpha) должен содержать ВЕСЬ каталог hf_space:
-   - app.py, chat.py, model.py, config.py, prompts.py, knowledge.py
-   - retrieval.py, retrieval_jsonl.py, retrieval_lexicon.py
-   - requirements.txt, README.md (frontmatter для HF)
+   - app.py, 
+   chat.py, 
+   model.py, 
+   config.py, 
+   prompts.py, 
+   knowledge.py
+   - retrieval.py, 
+   retrieval_jsonl.py, 
+   retrieval_lexicon.py
+   - requirements.txt, 
+   README.md (frontmatter для HF)
    - knowledge_base/  (в т.ч. allodium_whitepaper_v02.txt, alpha_role.md, production_facts.md)
    - datasets/allod_advisor.jsonl  (копия Q&A для RAG внутри Space)
 
