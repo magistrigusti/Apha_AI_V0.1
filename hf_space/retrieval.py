@@ -25,14 +25,9 @@ SPACE_DATASETS_DIR = BASE_DIR / "datasets"
 KB_SUFFIXES = {".md", ".txt", ".jsonl"}
 CHUNK_SIZE = 1100
 CHUNK_OVERLAP = 180
-PRIMARY_SHORT_FILE = "allodium_wp_v2.jsonl"
-PRIMARY_LONG_FILE = "ALLODIUM™м2.jsonl"
-PRIMARY_SHORT_KEY = PRIMARY_SHORT_FILE.casefold()
-PRIMARY_LONG_KEY = PRIMARY_LONG_FILE.casefold()
-PRIMARY_DATASET_ORDER = (
-    PRIMARY_SHORT_FILE,
-    PRIMARY_LONG_FILE,
-)
+PRIMARY_FILE = "allodium_whitepaper.jsonl"
+PRIMARY_KEY = PRIMARY_FILE.casefold()
+PRIMARY_DATASET_ORDER = (PRIMARY_FILE,)
 
 
 def _read_text(path: Path) -> str:
@@ -194,10 +189,8 @@ def _query_has_hint(
 
 def _source_priority(chunk: dict[str, object]) -> int:
     source_file = str(chunk.get("source_file", ""))
-    if source_file == PRIMARY_SHORT_KEY:
+    if source_file == PRIMARY_KEY:
         return 3
-    if source_file == PRIMARY_LONG_KEY:
-        return 2
     if chunk.get("source_kind") == "knowledge_base":
         return 1
     return 0
@@ -234,21 +227,13 @@ def retrieve_knowledge(query: str, limit: int = MAX_RETRIEVED_CHUNKS) -> list[di
 
         source_file = str(chunk.get("source_file", ""))
 
-        # ========== КОРОТКИЙ КАНОНИЧНЫЙ ОТВЕТ ==========
-        if source_file == PRIMARY_SHORT_KEY:
-            score += 7.0
+        # ========== КАНОНИЧНЫЙ WHITEPAPER ==========
+        if source_file == PRIMARY_KEY:
+            score += 8.0
             if short_query:
-                score += 3.0
-            if len(chunk_text) < 900:
-                score += 0.8
-
-        # ========== ДЛИННЫЙ КАНОНИЧНЫЙ ОТВЕТ ==========
-        elif source_file == PRIMARY_LONG_KEY:
-            score += 5.0
+                score += 2.0
             if long_query:
-                score += 2.5
-            if len(chunk_text) > 220:
-                score += 1.0
+                score += 2.0
 
         # ========== KNOWLEDGE_BASE — ВТОРИЧНЫЙ СЛОЙ ==========
         elif chunk["source_kind"] == "knowledge_base":
