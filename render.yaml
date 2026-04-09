@@ -16,7 +16,9 @@ services:
     envVars:
       - key: ALPHA_BOT_TOKEN
         sync: false
-      - key: GROQ_API_KEY
+      - key: ALPHA_SPACE_ID
+        value: magistrigusti/allod-alpha
+      - key: HF_TOKEN
         sync: false
       - key: NODE_VERSION
         value: "22"

@@ -8,8 +8,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import {
-  createAlphaBot,
-} from './alpha-bot.js';
+  startPollingAlphaBot,
+} from './telegram-runtime.js';
 
 // ========== HTTP СЕРВЕР ДЛЯ RENDER ==========
 // Render требует чтобы сервис слушал порт
@@ -20,21 +20,47 @@ app.get('/', (req, res) => {
   res.send('Альфа в сети! Зион на связи.');
 });
 
-app.listen(PORT, () => {
-  console.log(`[Server] Port ${PORT}`);
-});
-
-// ========== ИНИЦИАЛИЗАЦИЯ БОТА ==========
-const bot = createAlphaBot();
+let activeBot = null;
 
 
-// ========== ЗАПУСК ==========
-bot.launch();
-console.log('[Alpha Bot] Started!');
+async function bootstrap() {
+  const server = app.listen(PORT, () => {
+    console.log(`[Server] Port ${PORT}`);
+  });
 
-process.once(
-  'SIGINT', () => bot.stop('SIGINT')
-);
-process.once(
-  'SIGTERM', () => bot.stop('SIGTERM')
-);
+  try {
+    const {
+      bot,
+      removedWebhook,
+      webhookUrl,
+    } = await startPollingAlphaBot();
+
+    activeBot = bot;
+
+    if (removedWebhook) {
+      console.log(
+        '[Alpha Bot] Removed webhook for polling mode:',
+        webhookUrl,
+      );
+    }
+
+    console.log('[Alpha Bot] Started!');
+
+    process.once('SIGINT', () => {
+      activeBot?.stop('SIGINT');
+    });
+    process.once('SIGTERM', () => {
+      activeBot?.stop('SIGTERM');
+    });
+  } catch (error) {
+    console.error(
+      '[Alpha Bot] Failed to start:',
+      error,
+    );
+    server.close(() => process.exit(1));
+    setTimeout(() => process.exit(1), 1000).unref();
+  }
+}
+
+
+bootstrap();

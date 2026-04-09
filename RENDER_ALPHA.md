@@ -1,46 +1,77 @@
-# Альфа — глобальный деплой на Render
+# Альфа — Telegram бот на Render
 
-Бот работает в облаке 24/7, отвечает в Telegram.
-**Groq API** — без Hugging Face, без "Starting", быстрый ответ.
+Бот работает в облаке 24/7 и отвечает в Telegram.
+Источник ответа — Hugging Face Space Альфы.
+
+---
+
+## Как это работает
+
+`Telegram -> Render bot -> HF Space /ask -> ответ игроку`
+
+Важно:
+- Render-версия использует `polling`
+- если раньше у бота был webhook, новый старт сам снимает его
+- поэтому после деплоя Render-бот не должен упираться в `409 conflict`
 
 ---
 
 ## Быстрый старт (Blueprint)
 
 1. Зайди на [dashboard.render.com](https://dashboard.render.com)
-2. **New → Blueprint**
+2. Выбери **New -> Blueprint**
 3. Подключи репо `magistrigusti/Apha_Friend-gamers-allodium`
 4. Render подхватит `render.yaml` — нажми **Apply**
-5. В настройках сервиса **alpha-bot** добавь переменные:
+5. В настройках сервиса **alpha-bot** заполни переменные:
    - `ALPHA_BOT_TOKEN` = токен от @BotFather
-   - `GROQ_API_KEY` = ключ с [console.groq.com](https://console.groq.com) (бесплатно)
-6. Дождись деплоя (2–3 мин)
-
-Готово. Бот работает глобально.
+   - `ALPHA_SPACE_ID` = `magistrigusti/allod-alpha`
+   - `HF_TOKEN` = нужен только если Space приватный
+6. Дождись деплоя
 
 ---
 
 ## Ручной деплой
 
-**New → Web Service** (не Background Worker):
+Создай **Web Service**:
 
 | Поле | Значение |
 |------|----------|
 | Build | `npm install` |
 | Start | `npm start` |
-| Env | `ALPHA_BOT_TOKEN`, `GROQ_API_KEY` |
+| Env | `ALPHA_BOT_TOKEN`, `ALPHA_SPACE_ID`, `HF_TOKEN` |
+
+`ALPHA_SPACE_ID` по умолчанию:
+
+```text
+magistrigusti/allod-alpha
+```
 
 ---
 
-## Не дать сервису засыпать (free tier)
+## Что важно проверить
 
-Render останавливает сервис через ~15 мин без запросов.
+1. В логах Render должен быть:
+   - `[Server] Port ...`
+   - `[Alpha Bot] Started!`
+2. Если раньше бот работал через webhook, в логах может появиться:
+   - `[Alpha Bot] Removed webhook for polling mode: ...`
+3. В браузере URL сервиса должен отвечать:
+   - `Альфа в сети! Зион на связи.`
 
-[cron-job.org](https://cron-job.org) → задача каждые 14 мин на URL сервиса.
+---
+
+## Если Telegram всё ещё молчит
+
+Проверь:
+- верный ли `ALPHA_BOT_TOKEN`
+- не запущен ли где-то второй экземпляр этого же бота
+- доступны ли логи Render
+- отвечает ли сам HF Space в браузере
 
 ---
 
 ## Проверка
 
-- URL в браузере: «Альфа в сети! Зион на связи.»
-- Telegram @AlphaAllod_bot — пиши вопрос
+- URL сервиса в браузере: `Альфа в сети! Зион на связи.`
+- Telegram `@AlphaAllod_bot` — отправь `/start`
+- потом отправь `/ask Что такое Аллод?`
