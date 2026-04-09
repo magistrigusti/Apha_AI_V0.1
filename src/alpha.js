@@ -13,6 +13,34 @@ let alphaClientPromise = null;
 let alphaClientKey = '';
 
 
+function getAlphaErrorMessage(error) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error && typeof error === 'object') {
+    for (const key of ['message', 'error', 'detail']) {
+      const value = error[key];
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+
+  return String(error ?? '');
+}
+
+
 export function extractAlphaAnswer(result) {
   if (typeof result === 'string') {
     return result.trim() || 'Нет ответа.';
@@ -68,15 +96,12 @@ export async function askAlpha(message, options = {}) {
 
     const result = await client.predict(
       '/ask',
-      [question],
+      { msg: question },
     );
 
     return extractAlphaAnswer(result);
   } catch (error) {
-    const messageText =
-      error instanceof Error
-        ? error.message
-        : String(error);
+    const messageText = getAlphaErrorMessage(error);
 
     console.error('[Alpha HF]', messageText);
 
@@ -95,6 +120,9 @@ export async function askAlpha(message, options = {}) {
       messageText.includes('loading')
       || messageText.includes('sleep')
       || messageText.includes('503')
+      || messageText.includes('terminated')
+      || messageText.includes('UND_ERR_SOCKET')
+      || messageText.includes('Connection errored out')
     ) {
       return 'Альфа просыпается в Hugging Face. Повтори через 20-30 секунд.';
     }

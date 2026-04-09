@@ -13,7 +13,7 @@ let alphaBotInstance = null;
 
 function buildStartMessage(botUsername) {
   return 'Приветствую, Лорд!\n'
-    + 'Я Альфа — советник Аллода Зион.\n\n'
+    + 'Я Альфа — советник мира Аллодиум.\n\n'
     + 'В группе:\n'
     + '/ask <вопрос>\n'
     + 'или @' + botUsername

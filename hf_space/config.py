@@ -3,7 +3,7 @@ import os
 
 MODEL_ID = os.getenv(
     "MODEL_ID",
-    "Qwen/Qwen2.5-1.5B-Instruct",
+    "Qwen/Qwen2.5-0.5B-Instruct",
 )
 
 MAX_CONTEXT_TURNS = int(
