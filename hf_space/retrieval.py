@@ -8,7 +8,12 @@ from typing import Iterable
 
 from config import MAX_RETRIEVED_CHUNKS
 from retrieval_jsonl import qa_chunks_from_jsonl
-from retrieval_lexicon import ROLE_HINT_TOKENS, STOPWORDS
+from retrieval_lexicon import (
+    LONG_QUERY_HINTS,
+    ROLE_HINT_TOKENS,
+    SHORT_QUERY_HINTS,
+    STOPWORDS,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -20,6 +25,14 @@ SPACE_DATASETS_DIR = BASE_DIR / "datasets"
 KB_SUFFIXES = {".md", ".txt", ".jsonl"}
 CHUNK_SIZE = 1100
 CHUNK_OVERLAP = 180
+PRIMARY_SHORT_FILE = "allodium_wp_v2.jsonl"
+PRIMARY_LONG_FILE = "ALLODIUM™м2.jsonl"
+PRIMARY_SHORT_KEY = PRIMARY_SHORT_FILE.casefold()
+PRIMARY_LONG_KEY = PRIMARY_LONG_FILE.casefold()
+PRIMARY_DATASET_ORDER = (
+    PRIMARY_SHORT_FILE,
+    PRIMARY_LONG_FILE,
+)
 
 
 def _read_text(path: Path) -> str:
@@ -81,23 +94,44 @@ def _chunk_text(text: str) -> list[str]:
 
 def _iter_jsonl_files() -> Iterable[Path]:
     seen: set[Path] = set()
-    for base in (DATASETS_DIR, SPACE_DATASETS_DIR):
+
+    # ========== СНАЧАЛА ГЛАВНЫЕ JSONL ИСТОЧНИКИ ==========
+    for filename in PRIMARY_DATASET_ORDER:
+        for base in (SPACE_DATASETS_DIR, DATASETS_DIR):
+            path = base / filename
+            if not path.exists():
+                continue
+
+            key = path.resolve()
+            if key in seen:
+                continue
+
+            seen.add(key)
+            yield path
+
+    # ========== ПОТОМ ОСТАЛЬНЫЕ JSONL ==========
+    for base in (SPACE_DATASETS_DIR, DATASETS_DIR):
         if not base.exists():
             continue
+
         for path in sorted(base.glob("*.jsonl")):
             key = path.resolve()
             if key in seen:
                 continue
+
             seen.add(key)
             yield path
 
 
 def _iter_knowledge_paths() -> Iterable[Path]:
+    # ========== СНАЧАЛА DATASETS ==========
+    yield from _iter_jsonl_files()
+
+    # ========== ПОТОМ ВСПОМОГАТЕЛЬНЫЕ KNOWLEDGE_BASE ==========
     if KNOWLEDGE_DIR.exists():
         for path in sorted(KNOWLEDGE_DIR.rglob("*")):
             if path.is_file() and path.suffix.lower() in KB_SUFFIXES:
                 yield path
-    yield from _iter_jsonl_files()
 
 
 def _append_chunk_records(
@@ -108,14 +142,17 @@ def _append_chunk_records(
 ) -> None:
     title = path.stem.replace("_", " ").replace("-", " ").strip()
     relative = path.relative_to(BASE_DIR.parent).as_posix()
+
     for index, chunk in enumerate(pieces):
         tokens = _tokenize(chunk)
         if not tokens:
             continue
+
         chunks.append(
             {
                 "source": relative,
                 "source_kind": source_kind,
+                "source_file": path.name.casefold(),
                 "title": title or path.name,
                 "chunk_index": index + 1,
                 "text": chunk,
@@ -148,14 +185,35 @@ def load_external_chunks() -> list[dict[str, object]]:
     return chunks
 
 
+def _query_has_hint(
+    query_text: str,
+    hints: tuple[str, ...],
+) -> bool:
+    return any(hint in query_text for hint in hints)
+
+
+def _source_priority(chunk: dict[str, object]) -> int:
+    source_file = str(chunk.get("source_file", ""))
+    if source_file == PRIMARY_SHORT_KEY:
+        return 3
+    if source_file == PRIMARY_LONG_KEY:
+        return 2
+    if chunk.get("source_kind") == "knowledge_base":
+        return 1
+    return 0
+
+
 def retrieve_knowledge(query: str, limit: int = MAX_RETRIEVED_CHUNKS) -> list[dict[str, object]]:
     query_tokens = _tokenize(query)
     if not query_tokens:
         return []
 
+    query_text = query.strip().lower().replace("ё", "е")
     query_counts = Counter(query_tokens)
     query_unique = set(query_tokens)
     role_query = bool(query_unique & ROLE_HINT_TOKENS)
+    short_query = _query_has_hint(query_text, SHORT_QUERY_HINTS)
+    long_query = _query_has_hint(query_text, LONG_QUERY_HINTS) or len(query_tokens) > 8
     ranked: list[tuple[float, dict[str, object]]] = []
 
     for chunk in load_external_chunks():
@@ -163,17 +221,41 @@ def retrieve_knowledge(query: str, limit: int = MAX_RETRIEVED_CHUNKS) -> list[di
         if not overlap:
             continue
 
+        chunk_text = str(chunk["text"])
+        normalized_chunk_text = chunk_text.lower().replace("ё", "е")
         score = 0.0
         for token in overlap:
             score += min(query_counts[token], chunk["token_counts"][token]) * 2.5
 
         score += (len(overlap) / max(len(query_unique), 1)) * 3
 
-        if query.strip() and query.lower() in str(chunk["text"]).lower():
+        if query_text and query_text in normalized_chunk_text:
             score += 2
 
-        if chunk["source_kind"] == "knowledge_base":
-            score += 5 if role_query else 1.5
+        source_file = str(chunk.get("source_file", ""))
+
+        # ========== КОРОТКИЙ КАНОНИЧНЫЙ ОТВЕТ ==========
+        if source_file == PRIMARY_SHORT_KEY:
+            score += 7.0
+            if short_query:
+                score += 3.0
+            if len(chunk_text) < 900:
+                score += 0.8
+
+        # ========== ДЛИННЫЙ КАНОНИЧНЫЙ ОТВЕТ ==========
+        elif source_file == PRIMARY_LONG_KEY:
+            score += 5.0
+            if long_query:
+                score += 2.5
+            if len(chunk_text) > 220:
+                score += 1.0
+
+        # ========== KNOWLEDGE_BASE — ВТОРИЧНЫЙ СЛОЙ ==========
+        elif chunk["source_kind"] == "knowledge_base":
+            score += 4.0 if role_query else 0.7
+
+        else:
+            score += 1.2
 
         if score > 0:
             ranked.append((score, chunk))
@@ -181,6 +263,7 @@ def retrieve_knowledge(query: str, limit: int = MAX_RETRIEVED_CHUNKS) -> list[di
     ranked.sort(
         key=lambda item: (
             item[0],
+            _source_priority(item[1]),
             len(item[1]["unique_tokens"]),
         ),
         reverse=True,
