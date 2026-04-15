@@ -6,7 +6,7 @@ const DEFAULT_EMPTY_QUESTION_MESSAGE =
   'Напиши вопрос для Альфы.';
 const DEFAULT_NO_ANSWER_MESSAGE =
   'Нет ответа.';
-const DEFAULT_ALPHA_REQUEST_TIMEOUT_MS = 8000;
+const DEFAULT_ALPHA_REQUEST_TIMEOUT_MS = 5000;
 
 let alphaClientPromise = null;
 let alphaClientKey = '';
