@@ -1,6 +1,7 @@
 node_modules/
 dist/
-.env
+.env*
+.env.example
 .venv/
 venv/
 .cursor/
@@ -8,3 +9,6 @@ venv/
 # Кэш байткода Python (создаётся сам, на HF не нужен)
 __pycache__/
 *.py[cod]
+
+.vercel
+..env.production.local

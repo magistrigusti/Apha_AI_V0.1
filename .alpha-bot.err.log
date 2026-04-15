@@ -1,0 +1,172 @@
+Unhandled error while processing {
+  update_id: 270197339,
+  message: {
+    message_id: 105,
+    from: {
+      id: 685181380,
+      is_bot: false,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      language_code: 'ru',
+      is_premium: true
+    },
+    chat: {
+      id: 685181380,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      type: 'private'
+    },
+    date: 1775750083,
+    text: 'в'
+  }
+}
+Unhandled error while processing {
+  update_id: 270197340,
+  message: {
+    message_id: 106,
+    from: {
+      id: 685181380,
+      is_bot: false,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      language_code: 'ru',
+      is_premium: true
+    },
+    chat: {
+      id: 685181380,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      type: 'private'
+    },
+    date: 1775750224,
+    text: 'п'
+  }
+}
+Unhandled error while processing {
+  update_id: 270197341,
+  message: {
+    message_id: 107,
+    from: {
+      id: 685181380,
+      is_bot: false,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      language_code: 'ru',
+      is_premium: true
+    },
+    chat: {
+      id: 685181380,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      type: 'private'
+    },
+    date: 1775757793,
+    text: 'о'
+  }
+}
+Unhandled error while processing {
+  update_id: 270197342,
+  message: {
+    message_id: 108,
+    from: {
+      id: 685181380,
+      is_bot: false,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      language_code: 'ru',
+      is_premium: true
+    },
+    chat: {
+      id: 685181380,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      type: 'private'
+    },
+    date: 1775759520,
+    text: 'J'
+  }
+}
+Unhandled error while processing {
+  update_id: 270197343,
+  message: {
+    message_id: 109,
+    from: {
+      id: 685181380,
+      is_bot: false,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      language_code: 'ru',
+      is_premium: true
+    },
+    chat: {
+      id: 685181380,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      type: 'private'
+    },
+    date: 1775760790,
+    text: 'р'
+  }
+}
+Unhandled error while processing {
+  update_id: 270197344,
+  message: {
+    message_id: 110,
+    from: {
+      id: 685181380,
+      is_bot: false,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      language_code: 'ru',
+      is_premium: true
+    },
+    chat: {
+      id: 685181380,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      type: 'private'
+    },
+    date: 1775761712,
+    text: 'лд'
+  }
+}
+Unhandled error while processing {
+  update_id: 270197345,
+  message: {
+    message_id: 111,
+    from: {
+      id: 685181380,
+      is_bot: false,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      language_code: 'ru',
+      is_premium: true
+    },
+    chat: {
+      id: 685181380,
+      first_name: '🪓Rorschach🪓',
+      last_name: '📜معماري العالم',
+      username: 'old_knyazich',
+      type: 'private'
+    },
+    date: 1775761832,
+    text: 'а'
+  }
+}
+[Alpha Bot] Failed to start: TimeoutError: Promise timed out after 90000 milliseconds
+    at Timeout._onTimeout (C:\projects\Apha_Friend-gamers-allodium\node_modules\p-timeout\index.js:39:64)
+    at listOnTimeout (node:internal/timers:594:17)
+    at process.processTimers (node:internal/timers:529:7)

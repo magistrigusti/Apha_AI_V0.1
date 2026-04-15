@@ -11,8 +11,10 @@ from retrieval_jsonl import qa_chunks_from_jsonl
 from retrieval_lexicon import (
     LONG_QUERY_HINTS,
     ROLE_HINT_TOKENS,
+    SHORT_TOKEN_ALLOWLIST,
     SHORT_QUERY_HINTS,
     STOPWORDS,
+    TOKEN_NORMALIZATION,
 )
 
 
@@ -27,7 +29,14 @@ CHUNK_SIZE = 1100
 CHUNK_OVERLAP = 180
 PRIMARY_FILE = "allodium_whitepaper.jsonl"
 PRIMARY_KEY = PRIMARY_FILE.casefold()
-PRIMARY_DATASET_ORDER = (PRIMARY_FILE,)
+DATASET_SCORE_PRIORITY = {
+    "allodium_conversational_qa.jsonl": 8.0,
+    "dominum_conversational_qa.jsonl": 8.0,
+    "allodium_whitepaper.jsonl": 7.0,
+    "allodium_source_chunks.jsonl": 6.0,
+    "dominum_source_chunks.jsonl": 6.0,
+}
+PRIMARY_DATASET_ORDER = tuple(DATASET_SCORE_PRIORITY)
 
 
 def _read_text(path: Path) -> str:
@@ -45,8 +54,23 @@ def _normalize_whitespace(text: str) -> str:
 
 def _tokenize(text: str) -> list[str]:
     lowered = text.lower().replace("ё", "е")
-    tokens = re.findall(r"[a-zа-я0-9]{3,}", lowered)
-    return [token for token in tokens if token not in STOPWORDS]
+    raw_tokens = re.findall(r"[a-zа-я0-9]{2,}", lowered)
+    tokens: list[str] = []
+
+    for token in raw_tokens:
+        normalized = TOKEN_NORMALIZATION.get(token, token)
+        if (
+            len(normalized) < 3
+            and normalized not in SHORT_TOKEN_ALLOWLIST
+        ):
+            continue
+
+        if normalized in STOPWORDS:
+            continue
+
+        tokens.append(normalized)
+
+    return tokens
 
 
 def _chunk_text(text: str) -> list[str]:
@@ -189,8 +213,9 @@ def _query_has_hint(
 
 def _source_priority(chunk: dict[str, object]) -> int:
     source_file = str(chunk.get("source_file", ""))
-    if source_file == PRIMARY_KEY:
-        return 3
+    dataset_priority = DATASET_SCORE_PRIORITY.get(source_file)
+    if dataset_priority is not None:
+        return int(dataset_priority)
     if chunk.get("source_kind") == "knowledge_base":
         return 1
     return 0
@@ -222,14 +247,19 @@ def retrieve_knowledge(query: str, limit: int = MAX_RETRIEVED_CHUNKS) -> list[di
 
         score += (len(overlap) / max(len(query_unique), 1)) * 3
 
+        if query_unique and chunk["unique_tokens"].issuperset(
+            query_unique
+        ):
+            score += 4.5
+
         if query_text and query_text in normalized_chunk_text:
-            score += 2
+            score += 8
 
         source_file = str(chunk.get("source_file", ""))
 
-        # ========== КАНОНИЧНЫЙ WHITEPAPER ==========
-        if source_file == PRIMARY_KEY:
-            score += 8.0
+        dataset_priority = DATASET_SCORE_PRIORITY.get(source_file)
+        if dataset_priority is not None:
+            score += dataset_priority
             if short_query:
                 score += 2.0
             if long_query:

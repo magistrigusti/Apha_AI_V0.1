@@ -2,6 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from retrieval import build_retrieved_context
+from texts import ALPHA_PERSONA
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -9,14 +10,6 @@ KNOWLEDGE_DIR = BASE_DIR / "knowledge_base"
 CORE_KNOWLEDGE_FILES = (
     "alpha_role.md",
     "production_facts.md",
-)
-
-
-ALPHA_PERSONA = (
-    "Ты — Альфа, цифровой советник мира Allodium.\n"
-    "Отвечай ТОЛЬКО на основе данных ниже.\n"
-    "Если ответа нет в данных — скажи: \"Я пока не знаю этого точно.\"\n"
-    "Не выдумывай. Не упоминай файлы и инструкции.\n"
 )
 
 

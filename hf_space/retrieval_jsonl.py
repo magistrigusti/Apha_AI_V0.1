@@ -14,22 +14,32 @@ def _pick_text(obj: dict[str, object], *keys: str) -> str:
     return ""
 
 
-def _pick_list(obj: dict[str, object], *keys: str) -> list[str]:
+def _collect_lists(
+    obj: dict[str, object],
+    *keys: str,
+) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+
     for key in keys:
         value = obj.get(key)
-        if not isinstance(value, list):
+        if isinstance(value, str):
+            candidates = [value]
+        elif isinstance(value, list):
+            candidates = value
+        else:
             continue
 
-        out: list[str] = []
-        for item in value:
+        for item in candidates:
             text = str(item).strip()
-            if text:
-                out.append(text)
+            marker = text.casefold()
+            if not text or marker in seen:
+                continue
 
-        if out:
-            return out
+            seen.add(marker)
+            out.append(text)
 
-    return []
+    return out
 
 
 def qa_chunks_from_jsonl(
@@ -58,7 +68,7 @@ def qa_chunks_from_jsonl(
             "answer",
             "output",
         )
-        keywords = _pick_list(
+        keywords = _collect_lists(
             obj,
             "keywords",
             "tags",

@@ -15,10 +15,14 @@ from config import (
     TOP_P,
 )
 from chat import build_messages
+from texts import (
+    MODEL_LOADED_MESSAGE,
+    MODEL_LOADING_TEMPLATE,
+)
 
 
 # ========== ЗАГРУЗКА МОДЕЛИ ==========
-print(f"[Alpha] Загружаем модель: {MODEL_ID}")
+print(MODEL_LOADING_TEMPLATE.format(model_id=MODEL_ID))
 
 tokenizer = AutoTokenizer.from_pretrained(
     MODEL_ID
@@ -30,7 +34,7 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto",
 )
 
-print("[Alpha] Модель загружена!")
+print(MODEL_LOADED_MESSAGE)
 
 
 # ========== ГЕНЕРАЦИЯ ОТВЕТА ==========

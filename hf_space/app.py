@@ -5,37 +5,41 @@
 
 import gradio as gr
 from model import reply
+from texts import (
+    API_ASK_NAME,
+    UI_CLEAR_BUTTON_LABEL,
+    UI_DESCRIPTION,
+    UI_HEADING,
+    UI_MESSAGE_LABEL,
+    UI_MESSAGE_PLACEHOLDER,
+    UI_TITLE,
+    UI_WAITING_REPLY,
+)
 
 
 # ========== ИНТЕРФЕЙС ==========
 with gr.Blocks(
-    title="Альфа — Советник мира Allodium"
+    title=UI_TITLE,
 ) as demo:
 
     # ========== ЗАГОЛОВОК ==========
-    gr.Markdown(
-        "# Альфа — Советник мира Allodium"
-    )
-    gr.Markdown(
-        "Первый цифровой житель мира "
-        "Allodium. Спроси о механиках, "
-        "интерфейсе, лоре."
-    )
+    gr.Markdown(UI_HEADING)
+    gr.Markdown(UI_DESCRIPTION)
     # ========== ЧАТ ==========
     # type="messages" — формат OpenAI-style
     chat = gr.Chatbot(
         height=420,
-        
+        type="messages",
     )
 
     # ========== ПОЛЕ ВВОДА ==========
     msg = gr.Textbox(
-        label="Сообщение",
-        placeholder="Спроси Альфу…",
+        label=UI_MESSAGE_LABEL,
+        placeholder=UI_MESSAGE_PLACEHOLDER,
     )
 
     # ========== КНОПКА ОЧИСТКИ ==========
-    clear = gr.Button("Очистить диалог")
+    clear = gr.Button(UI_CLEAR_BUTTON_LABEL)
 
     # ========== ОБРАБОТЧИКИ ==========
     def user_send(user_message, chat_history):
@@ -47,7 +51,7 @@ with gr.Blocks(
         # Заглушка пока генерируется ответ
         chat_history.append({
             "role": "assistant",
-            "content": "…",
+            "content": UI_WAITING_REPLY,
         })
         return "", chat_history
 
@@ -97,7 +101,7 @@ with gr.Blocks(
         fn=lambda msg: reply(msg, []),
         inputs=api_input,
         outputs=api_output,
-        api_name="ask",
+        api_name=API_ASK_NAME,
     )
 
 

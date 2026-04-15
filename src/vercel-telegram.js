@@ -1,4 +1,4 @@
-import { getAlphaBot } from './alpha-bot.js';
+import { getAlphaBot } from './alpha-bot-hf.js';
 
 
 function readHeader(req, name) {
@@ -7,6 +7,17 @@ function readHeader(req, name) {
       name.toLowerCase()
     ]
     ?? null;
+}
+
+
+function normalizeSecretValue(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value
+    .replace(/\\r\\n/g, '')
+    .trim();
 }
 
 
@@ -48,13 +59,18 @@ export async function handleTelegramWebhook(
   }
 
   const secretToken =
-    options.secretToken
-    ?? process.env.TELEGRAM_WEBHOOK_SECRET
-    ?? '';
-  const incomingSecret = readHeader(
-    req,
-    'x-telegram-bot-api-secret-token',
-  );
+    normalizeSecretValue(
+      options.secretToken
+      ?? process.env.TELEGRAM_WEBHOOK_SECRET
+      ?? '',
+    );
+  const incomingSecret =
+    normalizeSecretValue(
+      readHeader(
+        req,
+        'x-telegram-bot-api-secret-token',
+      ) ?? '',
+    );
 
   if (
     secretToken
@@ -98,16 +114,20 @@ export async function registerTelegramWebhook(
   }
 
   const setupToken =
-    options.setupToken
-    ?? process.env.TELEGRAM_WEBHOOK_SETUP_TOKEN
-    ?? '';
+    normalizeSecretValue(
+      options.setupToken
+      ?? process.env.TELEGRAM_WEBHOOK_SETUP_TOKEN
+      ?? '',
+    );
   const incomingSetupToken =
-    readHeader(
-      req,
-      'x-webhook-setup-token',
-    )
-    ?? req.query?.token
-    ?? '';
+    normalizeSecretValue(
+      readHeader(
+        req,
+        'x-webhook-setup-token',
+      )
+      ?? req.query?.token
+      ?? '',
+    );
 
   if (
     setupToken
@@ -120,9 +140,11 @@ export async function registerTelegramWebhook(
   }
 
   const secretToken =
-    options.secretToken
-    ?? process.env.TELEGRAM_WEBHOOK_SECRET
-    ?? '';
+    normalizeSecretValue(
+      options.secretToken
+      ?? process.env.TELEGRAM_WEBHOOK_SECRET
+      ?? '',
+    );
   const webhookPath =
     options.webhookPath
     ?? '/api/telegram';

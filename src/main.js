@@ -10,14 +10,27 @@ dotenv.config();
 import {
   startPollingAlphaBot,
 } from './telegram-runtime.js';
+import {
+  handleAlphaHttpRequest,
+} from './alpha-http.js';
 
 // ========== HTTP СЕРВЕР ДЛЯ RENDER ==========
 // Render требует чтобы сервис слушал порт
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(express.json({ limit: '64kb' }));
+
 app.get('/', (req, res) => {
   res.send('Альфа в сети! Зион на связи.');
+});
+
+app.options('/api/alpha', (req, res) => {
+  handleAlphaHttpRequest(req, res);
+});
+
+app.post('/api/alpha', (req, res) => {
+  handleAlphaHttpRequest(req, res);
 });
 
 let activeBot = null;
