@@ -145,3 +145,25 @@ test('chatWithAlpha откатывается на /ask, если rich chat endpo
     },
   ]);
 });
+
+
+test('chatWithAlpha возвращает мягкий ответ при timeout HF', async () => {
+  const client = {
+    async predict() {
+      return new Promise(() => {});
+    },
+  };
+
+  const result = await chatWithAlpha(
+    'Что такое Mercatus?',
+    {
+      client,
+      timeoutMs: 5,
+    },
+  );
+
+  assert.equal(
+    result.answer,
+    'Альфа просыпается в Hugging Face. Повтори через 20-30 секунд.',
+  );
+});

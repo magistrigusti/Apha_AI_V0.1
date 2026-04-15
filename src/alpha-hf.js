@@ -6,9 +6,98 @@ const DEFAULT_EMPTY_QUESTION_MESSAGE =
   'Напиши вопрос для Альфы.';
 const DEFAULT_NO_ANSWER_MESSAGE =
   'Нет ответа.';
+const DEFAULT_ALPHA_REQUEST_TIMEOUT_MS = 12000;
 
 let alphaClientPromise = null;
 let alphaClientKey = '';
+
+
+function getAlphaRequestTimeoutMs(options = {}) {
+  const rawValue =
+    options.timeoutMs
+    ?? process.env.ALPHA_REQUEST_TIMEOUT_MS
+    ?? DEFAULT_ALPHA_REQUEST_TIMEOUT_MS;
+  const parsedValue = Number.parseInt(
+    String(rawValue),
+    10,
+  );
+
+  if (
+    Number.isFinite(parsedValue)
+    && parsedValue > 0
+  ) {
+    return parsedValue;
+  }
+
+  return DEFAULT_ALPHA_REQUEST_TIMEOUT_MS;
+}
+
+
+async function withAlphaTimeout(
+  promise,
+  label,
+  options = {},
+) {
+  const timeoutMs =
+    getAlphaRequestTimeoutMs(options);
+  let timeoutId;
+
+  const timeoutPromise = new Promise(
+    (_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(
+          new Error(
+            `${label} timeout after ${timeoutMs}ms`,
+          ),
+        );
+      }, timeoutMs);
+    },
+  );
+
+  try {
+    return await Promise.race([
+      promise,
+      timeoutPromise,
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+
+async function predictWithTimeout(
+  client,
+  apiName,
+  payload,
+  options = {},
+) {
+  const timeoutMs =
+    getAlphaRequestTimeoutMs(options);
+  let timeoutId;
+  const label = `Alpha ${apiName}`;
+
+  const timeoutPromise = new Promise(
+    (_, reject) => {
+      timeoutId = setTimeout(() => {
+        client.close?.();
+        reject(
+          new Error(
+            `${label} timeout after ${timeoutMs}ms`,
+          ),
+        );
+      }, timeoutMs);
+    },
+  );
+
+  try {
+    return await Promise.race([
+      client.predict(apiName, payload),
+      timeoutPromise,
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 
 function getAlphaErrorMessage(error) {
@@ -197,9 +286,13 @@ async function getAlphaClient(options = {}) {
 
   if (!alphaClientPromise || alphaClientKey !== nextKey) {
     alphaClientKey = nextKey;
-    alphaClientPromise = Client.connect(
-      spaceId,
-      token ? { token } : undefined,
+    alphaClientPromise = withAlphaTimeout(
+      Client.connect(
+        spaceId,
+        token ? { token } : undefined,
+      ),
+      'Alpha connect',
+      options,
     ).catch((error) => {
       alphaClientPromise = null;
       throw error;
@@ -225,6 +318,7 @@ function getAlphaFailureReply(messageText) {
   if (
     messageText.includes('loading')
     || messageText.includes('sleep')
+    || messageText.includes('timeout')
     || messageText.includes('503')
     || messageText.includes('terminated')
     || messageText.includes('UND_ERR_SOCKET')
@@ -281,12 +375,14 @@ export async function chatWithAlpha(
 
     if (options.chatHistory !== undefined) {
       try {
-        const userSendResult = await client.predict(
+        const userSendResult = await predictWithTimeout(
+          client,
           '/user_send',
           {
             user_message: question,
             chat_history: initialHistory,
           },
+          options,
         );
 
         const historyAfterUser =
@@ -302,11 +398,13 @@ export async function chatWithAlpha(
                 },
               ];
 
-        const botSendResult = await client.predict(
+        const botSendResult = await predictWithTimeout(
+          client,
           '/bot_send',
           {
             chat_history: nextUserHistory,
           },
+          options,
         );
 
         const nextHistory =
@@ -326,16 +424,26 @@ export async function chatWithAlpha(
                 ),
         };
       } catch (error) {
+        const messageText =
+          getAlphaErrorMessage(error);
         console.warn(
-          '[Alpha HF] Conversation endpoints failed, falling back to /ask:',
-          getAlphaErrorMessage(error),
+          '[Alpha HF] Conversation endpoints failed:',
+          messageText,
         );
+
+        if (messageText.includes('timeout')) {
+          throw error;
+        }
+
+        console.warn('[Alpha HF] Falling back to /ask');
       }
     }
 
-    const result = await client.predict(
+    const result = await predictWithTimeout(
+      client,
       '/ask',
       { msg: question },
+      options,
     );
     const answer = extractAlphaAnswer(result);
 
