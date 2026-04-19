@@ -26,10 +26,8 @@ with gr.Blocks(
     gr.Markdown(UI_HEADING)
     gr.Markdown(UI_DESCRIPTION)
     # ========== ЧАТ ==========
-    # type="messages" — формат OpenAI-style
     chat = gr.Chatbot(
         height=420,
-        type="messages",
     )
 
     # ========== ПОЛЕ ВВОДА ==========
@@ -44,6 +42,10 @@ with gr.Blocks(
     # ========== ОБРАБОТЧИКИ ==========
     def user_send(user_message, chat_history):
         """Отправка сообщения от игрока"""
+        chat_history = list(chat_history or [])
+        if not user_message or not user_message.strip():
+            return "", chat_history
+
         chat_history.append({
             "role": "user",
             "content": user_message,
@@ -57,6 +59,10 @@ with gr.Blocks(
 
     def bot_send(chat_history):
         """Генерация ответа Альфы"""
+        chat_history = list(chat_history or [])
+        if len(chat_history) < 2:
+            return chat_history
+
         # Сообщение игрока — предпоследнее
         user_message = chat_history[-2]["content"]
 

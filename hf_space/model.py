@@ -3,14 +3,13 @@
 # model.py — Загрузка модели и генерация
 # ========================================
 
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-)
-
 from config import (
+    ALPHA_MODEL_PROVIDER,
     MODEL_ID,
     MAX_NEW_TOKENS,
+    NVIDIA_API_KEY,
+    NVIDIA_BASE_URL,
+    NVIDIA_MODEL,
     TEMPERATURE,
     TOP_P,
 )
@@ -21,20 +20,68 @@ from texts import (
 )
 
 
-# ========== ЗАГРУЗКА МОДЕЛИ ==========
-print(MODEL_LOADING_TEMPLATE.format(model_id=MODEL_ID))
+USE_NVIDIA_API = ALPHA_MODEL_PROVIDER in {
+    "nvidia",
+    "nvidia-api",
+    "nim",
+}
 
-tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_ID
-)
+tokenizer = None
+model = None
+nvidia_client = None
 
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_ID,
-    torch_dtype="auto",
-    device_map="auto",
-)
 
-print(MODEL_LOADED_MESSAGE)
+def _load_local_model():
+    global model, tokenizer
+
+    if model is not None and tokenizer is not None:
+        return
+
+    from transformers import (
+        AutoModelForCausalLM,
+        AutoTokenizer,
+    )
+
+    print(MODEL_LOADING_TEMPLATE.format(model_id=MODEL_ID))
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        MODEL_ID
+    )
+
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL_ID,
+        torch_dtype="auto",
+        device_map="auto",
+    )
+
+    print(MODEL_LOADED_MESSAGE)
+
+
+def _load_nvidia_client():
+    global nvidia_client
+
+    if nvidia_client is not None:
+        return nvidia_client
+
+    if not NVIDIA_API_KEY:
+        raise RuntimeError(
+            "NVIDIA_API_KEY is required when ALPHA_MODEL_PROVIDER=nvidia"
+        )
+
+    from openai import OpenAI
+
+    print(f"[Alpha] Using NVIDIA API model: {NVIDIA_MODEL}")
+    nvidia_client = OpenAI(
+        base_url=NVIDIA_BASE_URL,
+        api_key=NVIDIA_API_KEY,
+    )
+    return nvidia_client
+
+
+if USE_NVIDIA_API:
+    _load_nvidia_client()
+else:
+    _load_local_model()
 
 
 # ========== ГЕНЕРАЦИЯ ОТВЕТА ==========
@@ -45,6 +92,19 @@ def reply(message, history):
     history  — список пар [user, bot]
     """
     messages = build_messages(message, history)
+
+    if USE_NVIDIA_API:
+        response = _load_nvidia_client().chat.completions.create(
+            model=NVIDIA_MODEL,
+            messages=messages,
+            max_tokens=MAX_NEW_TOKENS,
+            temperature=TEMPERATURE,
+            top_p=TOP_P,
+        )
+        content = response.choices[0].message.content or ""
+        return content.strip()
+
+    _load_local_model()
 
     # Применяем шаблон чата модели
     text = tokenizer.apply_chat_template(

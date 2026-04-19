@@ -6,6 +6,26 @@ MODEL_ID = os.getenv(
     "Qwen/Qwen2.5-0.5B-Instruct",
 )
 
+ALPHA_MODEL_PROVIDER = os.getenv(
+    "ALPHA_MODEL_PROVIDER",
+    "local",
+).strip().lower()
+
+NVIDIA_API_KEY = os.getenv(
+    "NVIDIA_API_KEY",
+    "",
+).strip()
+
+NVIDIA_BASE_URL = os.getenv(
+    "NVIDIA_BASE_URL",
+    "https://integrate.api.nvidia.com/v1",
+).strip()
+
+NVIDIA_MODEL = os.getenv(
+    "NVIDIA_MODEL",
+    "qwen/qwen2.5-7b-instruct",
+).strip()
+
 MAX_CONTEXT_TURNS = int(
     os.getenv("MAX_CONTEXT_TURNS", "4")
 )
