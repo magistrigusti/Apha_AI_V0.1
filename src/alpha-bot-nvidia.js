@@ -1,7 +1,7 @@
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 
-import { chatWithAlpha } from './alpha-hf.js';
+import { chatWithAlpha } from './alpha-nvidia.js';
 import { replaceWaitingMessage } from './telegram-reply.js';
 
 

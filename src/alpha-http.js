@@ -1,4 +1,4 @@
-import { chatWithAlpha } from './alpha-hf.js';
+import { chatWithAlpha } from './alpha-nvidia.js';
 
 
 const ALLOWED_METHODS = 'POST, OPTIONS';

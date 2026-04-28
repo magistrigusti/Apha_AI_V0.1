@@ -1,4 +1,4 @@
-import { getAlphaBot } from './alpha-bot-hf.js';
+import { getAlphaBot } from './alpha-bot-nvidia.js';
 
 
 function readHeader(req, name) {

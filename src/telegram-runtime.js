@@ -1,4 +1,4 @@
-import { createAlphaBot } from './alpha-bot-hf.js';
+import { createAlphaBot } from './alpha-bot-nvidia.js';
 
 
 function normalizeWebhookUrl(info) {

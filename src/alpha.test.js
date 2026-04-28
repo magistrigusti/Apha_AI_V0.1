@@ -4,27 +4,54 @@ import assert from 'node:assert/strict';
 import { askAlpha, extractAlphaAnswer } from './alpha.js';
 
 
-test('askAlpha отправляет msg в endpoint /ask', async () => {
+test('askAlpha отправляет сообщение в NVIDIA chat completions', async () => {
   const calls = [];
-  const client = {
-    async predict(apiName, payload) {
-      calls.push({ apiName, payload });
-      return { data: 'Ответ Альфы' };
-    },
-  };
 
   const answer = await askAlpha(
     'Что такое Аллод?',
-    { client },
+    {
+      apiKey: 'test-key',
+      model: 'nvidia/test-model',
+      fallbackModels: [],
+      async fetch(url, request) {
+        calls.push({
+          url,
+          body: JSON.parse(request.body),
+        });
+
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return {
+              choices: [
+                {
+                  message: {
+                    content: 'Ответ Альфы',
+                  },
+                },
+              ],
+            };
+          },
+        };
+      },
+    },
   );
 
   assert.equal(answer, 'Ответ Альфы');
-  assert.deepEqual(calls, [
-    {
-      apiName: '/ask',
-      payload: { msg: 'Что такое Аллод?' },
-    },
-  ]);
+  assert.equal(calls.length, 1);
+  assert.equal(
+    calls[0].url,
+    'https://integrate.api.nvidia.com/v1/chat/completions',
+  );
+  assert.equal(
+    calls[0].body.model,
+    'nvidia/test-model',
+  );
+  assert.equal(
+    calls[0].body.messages.at(-1).content,
+    'Что такое Аллод?',
+  );
 });
 
 
@@ -51,26 +78,14 @@ test('extractAlphaAnswer достает текст из ответа Gradio', ()
   );
 });
 
-test('askAlpha вызывает endpoint /ask у HF Space', async () => {
-  const calls = [];
-  const fakeClient = {
-    async predict(apiName, payload) {
-      calls.push([apiName, payload]);
-      return {
-        data: ['Ответ из Space'],
-      };
-    },
-  };
+test('askAlpha не раскрывает провайдера без ключа', async () => {
+  const answer = await askAlpha('Что такое Зион?', {
+    apiKey: '',
+  });
 
-  const answer = await askAlpha(
-    'Что такое Зион?',
-    {
-      client: fakeClient,
-    },
+  assert.equal(
+    answer,
+    'Альфа еще не подключена к боевому мозгу. Сообщи администратору проекта.',
   );
-
-  assert.equal(answer, 'Ответ из Space');
-  assert.deepEqual(calls, [
-    ['/ask', { msg: 'Что такое Зион?' }],
-  ]);
+  assert.doesNotMatch(answer, /NVIDIA|Hugging|API/i);
 });
