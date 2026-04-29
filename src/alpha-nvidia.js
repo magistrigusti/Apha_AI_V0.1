@@ -4,7 +4,7 @@ const DEFAULT_NVIDIA_MODEL =
   'nvidia/llama-3.1-nemotron-nano-8b-v1';
 const DEFAULT_NVIDIA_MODEL_FALLBACKS = [
   'meta/llama-3.1-8b-instruct',
-  'qwen/qwen2-7b-instruct',
+  'qwen/qwen2.5-7b-instruct',
   'mistralai/mistral-7b-instruct-v0.3',
 ];
 const DEFAULT_ALPHA_REQUEST_TIMEOUT_MS = 25000;
@@ -18,7 +18,7 @@ const DEFAULT_EMPTY_QUESTION_MESSAGE =
 const DEFAULT_NO_ANSWER_MESSAGE =
   'Нет ответа.';
 const PUBLIC_ALPHA_CONFIG_MESSAGE =
-  'Альфа еще не подключена к боевому мозгу. Сообщи администратору проекта.';
+  'Альфа временно не отвечает. Попробуй еще раз через несколько секунд.';
 const PUBLIC_ALPHA_RATE_LIMIT_MESSAGE =
   'Слишком много запросов к Альфе. Попробуй чуть позже.';
 const PUBLIC_ALPHA_TRANSIENT_MESSAGE =
