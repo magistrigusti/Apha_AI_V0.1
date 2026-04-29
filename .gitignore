@@ -11,4 +11,6 @@ __pycache__/
 *.py[cod]
 
 .vercel
+.vercel-global/
+vercel-global-config/
 ..env.production.local

@@ -1,10 +1,11 @@
 const DEFAULT_NVIDIA_BASE_URL =
   'https://integrate.api.nvidia.com/v1';
 const DEFAULT_NVIDIA_MODEL =
-  'nvidia/llama-3.1-nemotron-nano-8b-v1';
+  'nvidia/nvidia-nemotron-nano-9b-v2';
 const DEFAULT_NVIDIA_MODEL_FALLBACKS = [
+  'nvidia/llama-3.1-nemotron-nano-8b-v1',
   'meta/llama-3.1-8b-instruct',
-  'qwen/qwen2.5-7b-instruct',
+  'mistralai/mistral-small-24b-instruct',
   'mistralai/mistral-7b-instruct-v0.3',
 ];
 const DEFAULT_ALPHA_REQUEST_TIMEOUT_MS = 25000;
@@ -332,6 +333,7 @@ function isModelFallbackError(error) {
   return (
     status === 400
     || status === 404
+    || status === 410
     || status === 422
     || status === 500
     || status === 502
